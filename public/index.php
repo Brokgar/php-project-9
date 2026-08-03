@@ -12,8 +12,9 @@ $app->addErrorMiddleware(true, true, true);
 
 // Главная страница
 $app->get('/', function (Request $request, Response $response): Response {
-    $response->getBody()->write('<h1>URL Analyzer</h1>');
-    return $response;
+    $renderer = new PhpRenderer(__DIR__ . '/../templates');
+    $renderer->setLayout('layout.phtml');
+    return $renderer->render($response, 'index.phtml');
 });
 
 $app->run();
