@@ -1,2 +1,15 @@
-vendor/
-composer.lock
+/vendor/
+/.phpunit.cache/
+/.phpcs-cache
+*.log
+
+# Environment & database
+.env
+*.sqlite
+*.db
+
+# IDE & OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
