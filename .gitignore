@@ -1,15 +1,51 @@
+# Composer
 /vendor/
-/.phpunit.cache/
-/.phpcs-cache
+composer.lock
+
+# PHP unit
+.phpunit.cache/
+.phpcs-cache/
+coverage/
+
+# Logs
 *.log
+*.tmp
+*.swp
+*.swo
+*~
 
 # Environment & database
 .env
+.env.local
+.env.*.local
 *.sqlite
+*.sqlite3
 *.db
 
-# IDE & OS
-.DS_Store
-Thumbs.db
+# IDE & Editor
 .idea/
 .vscode/
+*.sublime-project
+*.sublime-workspace
+.phpintel/
+.idea_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Build / cache (if applicable)
+/runtime/
+/tmp/
+/cache/
+
+# Node / frontend (if used)
+/node_modules/
+/public/assets/build/
+
+# Test fixtures / generated data
+/tests/fixtures/generated/
+
+# PHP native
+phpunit.xml
