@@ -25,20 +25,36 @@ $dsn = "pgsql:host={$host};port={$port};dbname={$dbname}";
 try {
     $pdo = new PDO($dsn, $user, $pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    echo "Успешное подключение к базе данных!";
 } catch (PDOException $e) {
     die("Ошибка подключения: " . $e->getMessage());
 }
 
 
 $app = AppFactory::create();
+$app->addBodyParsingMiddleware();
 $app->addErrorMiddleware(true, true, true);
 
 $app->get(
-    '/', function (Request $request, Response $response): Response {
+    '/',
+    function (Request $request, Response $response): Response {
         $renderer = new PhpRenderer(__DIR__ . '/../templates');
         $renderer->setLayout('layout.phtml');
         return $renderer->render($response, 'index.phtml');
+    }
+);
+
+$app->post(
+    '/urls',
+    function (Request $request, Response $response) use ($pdo): Response {
+        $data = $request->getParsedBody();
+        $urlName = trim($data['url']['name'] ?? '');
+
+        $statement = $pdo->prepare(
+            'INSERT INTO urls (name, created_at) VALUES (:name, CURRENT_TIMESTAMP)'
+        );
+        $statement->execute(['name' => $urlName]);
+
+        return $response->withHeader('Location', '/')->withStatus(302);
     }
 );
 
