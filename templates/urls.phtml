@@ -1,0 +1,27 @@
+<div class="container-lg mt-3">
+  <h1 class="mb-3">Сайты</h1>
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover text-nowrap" data-test="urls">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Имя</th>
+          <th>Дата создания</th>
+          <th>Дата последней проверки</th>
+          <th>Код ответа</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php foreach ($urls as $url): ?>
+          <tr>
+            <td><?= htmlspecialchars((string) $url['id']) ?></td>
+            <td><a href="<?= htmlspecialchars($router->urlFor('urls.show', ['id' => $url['id']])) ?>"><?= htmlspecialchars($url['name']) ?></a></td>
+            <td><?= htmlspecialchars($url['created_at']) ?></td>
+            <td><?= htmlspecialchars($url['last_check_created_at'] ?? '') ?></td>
+            <td><?= htmlspecialchars((string) ($url['status_code'] ?? '')) ?></td>
+          </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
+</div>

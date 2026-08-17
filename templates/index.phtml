@@ -3,8 +3,10 @@
     <div class="col-12 col-md-10 col-lg-8 mx-auto border rounded-3 bg-light p-5">
       <h1 class="display-3">Анализатор страниц</h1>
       <p class="lead">Бесплатно проверяйте сайты на SEO-пригодность</p>
-      <form action="/urls" method="post" class="rss-form d-flex justify-content-center text-body">
-        <input type="text" name="url[name]" value="<?= htmlspecialchars($url['name'] ?? '') ?>" placeholder="https://www.example.com" class="form-control form-control-lg" required>
+      <form action="<?= htmlspecialchars($router->urlFor('urls.create')) ?>" method="post" class="rss-form d-flex justify-content-center text-body">
+        <div class="w-100">
+          <input type="text" name="url" value="<?= htmlspecialchars($url ?? '') ?>" placeholder="https://www.example.com" class="form-control form-control-lg" required>
+        </div>
         <input type="submit" class="btn btn-primary btn-lg ms-3 px-5 text-uppercase" value="Проверить">
       </form>
     </div>

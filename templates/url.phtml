@@ -1,0 +1,60 @@
+<?php
+$shorten = static function (?string $value): string {
+    $value ??= '';
+    $suffix = '...';
+    $limit = 200;
+
+    if (iconv_strlen($value, 'UTF-8') <= $limit) {
+        return $value;
+    }
+
+    return iconv_substr($value, 0, $limit - iconv_strlen($suffix, 'UTF-8'), 'UTF-8') . $suffix;
+};
+?>
+<div class="container-lg mt-3">
+  <h1 class="mb-3">Сайт: <?= htmlspecialchars($url['name']) ?></h1>
+  <table class="table table-bordered table-hover text-nowrap" data-test="url">
+    <tbody>
+      <tr>
+        <th>ID</th>
+        <td><?= htmlspecialchars((string) $url['id']) ?></td>
+      </tr>
+      <tr>
+        <th>Имя</th>
+        <td><?= htmlspecialchars($url['name']) ?></td>
+      </tr>
+      <tr>
+        <th>Дата создания</th>
+        <td><?= htmlspecialchars($url['created_at']) ?></td>
+      </tr>
+    </tbody>
+  </table>
+  <h2 class="mt-5 mb-3">Проверки</h2>
+  <form action="<?= htmlspecialchars($router->urlFor('urls.checks.create', ['url_id' => $url['id']])) ?>" method="post" class="mb-3">
+    <input type="submit" class="btn btn-primary" value="Запустить проверку">
+  </form>
+  <table class="table table-bordered table-hover text-nowrap" data-test="checks">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Код ответа</th>
+        <th>h1</th>
+        <th>title</th>
+        <th>description</th>
+        <th>Дата создания</th>
+      </tr>
+    </thead>
+    <tbody>
+      <?php foreach ($checks as $check): ?>
+        <tr>
+          <td><?= htmlspecialchars((string) $check['id']) ?></td>
+          <td><?= htmlspecialchars((string) ($check['status_code'] ?? '')) ?></td>
+          <td><?= htmlspecialchars($shorten($check['h1'] ?? '')) ?></td>
+          <td><?= htmlspecialchars($shorten($check['title'] ?? '')) ?></td>
+          <td><?= htmlspecialchars($shorten($check['description'] ?? '')) ?></td>
+          <td><?= htmlspecialchars($check['created_at']) ?></td>
+        </tr>
+      <?php endforeach; ?>
+    </tbody>
+  </table>
+</div>
