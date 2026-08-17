@@ -11,6 +11,7 @@ use Slim\Flash\Messages;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use Symfony\Component\DomCrawler\Crawler;
+use Valitron\Validator;
 
 $dotenv = Dotenv::createImmutable(dirname(__DIR__));
 $dotenv->safeLoad();
@@ -129,22 +130,19 @@ $app->post(
         $url = is_array($data) ? ($data['url'] ?? '') : '';
         $urlName = is_string($url) ? trim($url) : '';
 
-        if ($urlName === '') {
-            $flash->addMessageNow('danger', 'URL не должен быть пустым');
-            return $render($response->withStatus(422), 'index.phtml', ['url' => $urlName]);
-        }
+        $validator = new Validator(['url' => $urlName]);
+        $validator->rule('required', 'url')->message('URL не должен быть пустым');
+        $validator->rule('lengthMax', 'url', 255)->message('URL превышает 255 символов');
+        $validator->rule('url', 'url')->message('Некорректный URL');
 
-        if (strlen($urlName) > 255) {
-            $flash->addMessageNow('danger', 'URL превышает 255 символов');
+        if (!$validator->validate()) {
+            $errors = $validator->errors();
+            $flash->addMessageNow('danger', $errors['url'][0]);
             return $render($response->withStatus(422), 'index.phtml', ['url' => $urlName]);
         }
 
         $parsedUrl = parse_url($urlName);
-        if (
-            filter_var($urlName, FILTER_VALIDATE_URL) === false
-            || !is_array($parsedUrl)
-            || !isset($parsedUrl['scheme'], $parsedUrl['host'])
-        ) {
+        if (!is_array($parsedUrl) || !isset($parsedUrl['scheme'], $parsedUrl['host'])) {
             $flash->addMessageNow('danger', 'Некорректный URL');
             return $render($response->withStatus(422), 'index.phtml', ['url' => $urlName]);
         }
