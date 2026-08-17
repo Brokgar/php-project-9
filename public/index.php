@@ -34,6 +34,14 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS urls (
+            id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+            name VARCHAR(255) NOT NULL UNIQUE,
+            created_at TIMESTAMP NOT NULL
+        )'
+    );
+
+    $pdo->exec(
         'CREATE TABLE IF NOT EXISTS url_checks (
             id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
             url_id BIGINT NOT NULL REFERENCES urls (id) ON DELETE CASCADE,
