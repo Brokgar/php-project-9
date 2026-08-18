@@ -8,7 +8,7 @@ $shorten = static function (?string $value): string {
         return $value;
     }
 
-    return iconv_substr($value, 0, $limit - iconv_strlen($suffix, 'UTF-8'), 'UTF-8') . $suffix;
+    return iconv_substr($value, 0, $limit, 'UTF-8') . $suffix;
 };
 ?>
 <div class="container-lg mt-3">

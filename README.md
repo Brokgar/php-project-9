@@ -3,3 +3,6 @@
 
 ### Demo:
 [https://php-project-9-nhxo.onrender.com/](https://php-project-9-nhxo.onrender.com/)
+
+### Руководство для начинающих
+[Построчный разбор проекта](GUIDE.md)
