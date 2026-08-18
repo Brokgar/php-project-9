@@ -67,7 +67,6 @@ $renderer->setLayout('layout.phtml');
 $httpClient = new Client([
     'timeout' => 10,
     'connect_timeout' => 5,
-    'http_errors' => false,
     'headers' => ['User-Agent' => 'PageAnalyzer/1.0'],
 ]);
 
