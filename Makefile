@@ -1,7 +1,7 @@
 PORT ?= 8000
 export PHP_CLI_SERVER_WORKERS = 5
 
-install:
+setup:
 	composer install
 
 start:
