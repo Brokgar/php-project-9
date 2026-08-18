@@ -1,6 +1,6 @@
 <?php
 
-require __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 use Slim\Factory\AppFactory;
 use Slim\Views\PhpRenderer;
@@ -19,14 +19,24 @@ $dotenv->safeLoad();
 session_start();
 $flash = new Messages($_SESSION);
 
-$dbUrl = $_ENV['DATABASE_URL'];
+$dbUrl = $_ENV['DATABASE_URL'] ?? null;
+$parsed = is_string($dbUrl) ? parse_url($dbUrl) : false;
 
-$parsed = parse_url($dbUrl);
-$host   = $parsed['host'];
-$port   = $parsed['port'] ?? 5432;
+if (
+    !is_array($parsed)
+    || !isset($parsed['host'], $parsed['path'], $parsed['user'])
+    || ltrim($parsed['path'], '/') === ''
+) {
+    error_log('DATABASE_URL is missing or invalid');
+    http_response_code(500);
+    exit('Сервис временно недоступен.');
+}
+
+$host = $parsed['host'];
+$port = $parsed['port'] ?? 5432;
 $dbname = ltrim($parsed['path'], '/');
-$user   = $parsed['user'];
-$pass   = $parsed['pass'];
+$user = $parsed['user'];
+$pass = $parsed['pass'] ?? null;
 
 $dsn = "pgsql:host={$host};port={$port};dbname={$dbname}";
 
@@ -54,7 +64,9 @@ try {
         )'
     );
 } catch (PDOException $e) {
-    die("Ошибка подключения: " . $e->getMessage());
+    error_log(sprintf('Database connection failed: %s', $e->getMessage()));
+    http_response_code(500);
+    exit('Сервис временно недоступен.');
 }
 
 
@@ -64,17 +76,26 @@ $app->addErrorMiddleware(true, true, true);
 
 $renderer = new PhpRenderer(__DIR__ . '/../templates');
 $renderer->setLayout('layout.phtml');
-$httpClient = new Client([
+$httpClient = new Client(
+    [
     'timeout' => 10,
     'connect_timeout' => 5,
     'headers' => ['User-Agent' => 'PageAnalyzer/1.0'],
-]);
+    ]
+);
 
 $render = function (Response $response, string $template, array $params = []) use ($renderer, $flash, $app): Response {
-    return $renderer->render($response, $template, array_merge([
-        'flash' => $flash->getMessages(),
-        'router' => $app->getRouteCollector()->getRouteParser(),
-    ], $params));
+    return $renderer->render(
+        $response,
+        $template,
+        array_merge(
+            [
+                'flash' => $flash->getMessages(),
+                'router' => $app->getRouteCollector()->getRouteParser(),
+            ],
+            $params
+        )
+    );
 };
 
 $getPageData = static function (string $url) use ($httpClient): ?array {
@@ -97,6 +118,13 @@ $getPageData = static function (string $url) use ($httpClient): ?array {
     }
 
     $crawler = new Crawler($content);
+    $truncate = static function (?string $value, int $limit = 255): ?string {
+        if ($value === null || mb_strlen($value) <= $limit) {
+            return $value;
+        }
+
+        return mb_substr($value, 0, $limit);
+    };
     $getText = static function ($node): ?string {
         $text = optional($node)->textContent;
         if ($text === null) {
@@ -106,8 +134,8 @@ $getPageData = static function (string $url) use ($httpClient): ?array {
         return trim((string) preg_replace('/\s+/u', ' ', $text));
     };
 
-    $h1 = $getText($crawler->filter('h1')->getNode(0));
-    $title = $getText($crawler->filter('title')->getNode(0));
+    $h1 = $truncate($getText($crawler->filter('h1')->getNode(0)));
+    $title = $truncate($getText($crawler->filter('title')->getNode(0)));
     $descriptionNode = $crawler->filter('meta[name="description"]')->getNode(0);
     $description = optional($descriptionNode)->getAttribute('content');
     $description = $description === null ? null : trim($description);
@@ -241,13 +269,15 @@ $app->post(
                 'INSERT INTO url_checks (url_id, status_code, h1, title, description, created_at)
                  VALUES (:url_id, :status_code, :h1, :title, :description, CURRENT_TIMESTAMP)'
             );
-            $statement->execute([
+            $statement->execute(
+                [
                 'url_id' => $urlId,
                 'status_code' => $pageData['statusCode'],
                 'h1' => $pageData['h1'],
                 'title' => $pageData['title'],
                 'description' => $pageData['description'],
-            ]);
+                ]
+            );
         } catch (PDOException $exception) {
             $flash->addMessage('danger', 'Произошла ошибка при проверке, не удалось подключиться');
             return $response
@@ -281,10 +311,14 @@ $app->get(
         );
         $statement->execute(['url_id' => $url['id']]);
 
-        return $render($response, 'url.phtml', [
-            'url' => $url,
-            'checks' => $statement->fetchAll(PDO::FETCH_ASSOC),
-        ]);
+        return $render(
+            $response,
+            'url.phtml',
+            [
+                'url' => $url,
+                'checks' => $statement->fetchAll(PDO::FETCH_ASSOC),
+            ]
+        );
     }
 )->setName('urls.show');
 
