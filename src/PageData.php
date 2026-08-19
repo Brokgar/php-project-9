@@ -61,7 +61,6 @@ class PageData
             'timeout' => 10,
             'connect_timeout' => 5,
             'headers' => ['User-Agent' => 'PageAnalyzer/1.0'],
-            'http_errors' => false,
             'allow_redirects' => false,
             'proxy' => '',
             'curl' => self::getCurlOptions($target),

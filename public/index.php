@@ -266,7 +266,7 @@ $app->post(
             $pageData = PageData::get($url['name']);
         } catch (GuzzleException | InvalidArgumentException $exception) {
             error_log(sprintf('Unable to check URL "%s": %s', $url['name'], $exception->getMessage()));
-            $flash->addMessage('danger', 'Не удалось проверить страницу. Повторите попытку позже.');
+            $flash->addMessage('danger', 'Произошла ошибка при проверке, не удалось подключиться');
             return $response
                 ->withHeader('Location', $router->urlFor('urls.show', ['id' => $urlId]))
                 ->withStatus(302);
