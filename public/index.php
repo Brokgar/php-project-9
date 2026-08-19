@@ -3,7 +3,6 @@
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use App\PageData;
-use App\UrlSafety;
 use DI\ContainerBuilder;
 use Slim\Exception\HttpNotFoundException;
 use Slim\Factory\AppFactory;
@@ -129,13 +128,6 @@ $app->post(
         $normalizedUrl = sprintf('%s://%s', $parsedUrl['scheme'], $parsedUrl['host']);
         if (isset($parsedUrl['port'])) {
             $normalizedUrl .= ':' . $parsedUrl['port'];
-        }
-
-        try {
-            UrlSafety::inspect($normalizedUrl);
-        } catch (InvalidArgumentException $exception) {
-            $flash->addMessageNow('danger', 'Разрешены только публичные HTTP- и HTTPS-адреса');
-            return $renderer->render($response->withStatus(422), 'index.phtml', ['url' => $urlName]);
         }
 
         $statement = $pdo->prepare('SELECT id FROM urls WHERE name = :name');
