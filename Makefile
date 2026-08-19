@@ -4,6 +4,9 @@ export PHP_CLI_SERVER_WORKERS = 5
 setup:
 	composer install
 
+db-init:
+	psql "$$DATABASE_URL" -f database.sql
+
 start:
 	php -S 0.0.0.0:$(PORT) -t public
 
@@ -16,4 +19,4 @@ test:
 validate:
 	composer validate
 
-.PHONY: install start lint test validate
+.PHONY: install db-init start lint test validate

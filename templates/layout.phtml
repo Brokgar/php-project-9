@@ -29,10 +29,11 @@
     </header>
 
     <main class="flex-grow-1">
-      <?php if (isset($flash) && !empty($flash)): ?>
+      <?php $messages = $flash->getMessages(); ?>
+      <?php if (!empty($messages)): ?>
         <div class="container-lg mt-3">
-          <?php foreach ($flash as $type => $messages): ?>
-            <?php foreach ((array)$messages as $message): ?>
+          <?php foreach ($messages as $type => $flashMessages): ?>
+            <?php foreach ((array) $flashMessages as $message): ?>
               <div class="alert alert-<?= htmlspecialchars($type) ?>" role="alert">
                 <?= htmlspecialchars($message) ?>
               </div>

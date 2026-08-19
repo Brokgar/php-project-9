@@ -2,12 +2,13 @@ FROM php:8.4-cli
 
 # Установка системных зависимостей (включая make, git и unzip для работы Composer и Makefile)
 RUN apt-get update && apt-get install -y \
+    libcurl4-openssl-dev \
     libzip-dev \
     libpq-dev \
     make \
     git \
     unzip \
-    && docker-php-ext-install zip pdo pdo_pgsql \
+    && docker-php-ext-install curl zip pdo pdo_pgsql \
     && rm -rf /var/lib/apt/lists/*
 
 # Копирование бинарного файла Composer из официального образа

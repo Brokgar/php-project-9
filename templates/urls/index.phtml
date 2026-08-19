@@ -22,4 +22,20 @@
       </tbody>
     </table>
   </div>
+  <?php if ($pagination['page'] > 1 || $pagination['hasNextPage']): ?>
+    <nav aria-label="Навигация по страницам">
+      <ul class="pagination">
+        <?php if ($pagination['page'] > 1): ?>
+          <li class="page-item">
+            <a class="page-link" href="<?= htmlspecialchars($router->urlFor('urls.index', [], ['page' => $pagination['page'] - 1])) ?>">Назад</a>
+          </li>
+        <?php endif; ?>
+        <?php if ($pagination['hasNextPage']): ?>
+          <li class="page-item">
+            <a class="page-link" href="<?= htmlspecialchars($router->urlFor('urls.index', [], ['page' => $pagination['page'] + 1])) ?>">Вперёд</a>
+          </li>
+        <?php endif; ?>
+      </ul>
+    </nav>
+  <?php endif; ?>
 </div>
