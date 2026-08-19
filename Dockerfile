@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y \
     libcurl4-openssl-dev \
     libzip-dev \
     libpq-dev \
+    postgresql-client \
     make \
     git \
     unzip \
@@ -25,4 +26,4 @@ COPY . .
 
 EXPOSE 8000
 
-CMD ["make", "start"]
+CMD ["sh", "-c", "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f database.sql && make start"]

@@ -15,5 +15,10 @@ CREATE TABLE IF NOT EXISTS url_checks (
     created_at TIMESTAMP NOT NULL
 );
 
+-- Existing deployments may have been created before final_url was introduced.
+-- CREATE TABLE IF NOT EXISTS does not update such tables, so migrate them here.
+ALTER TABLE url_checks
+    ADD COLUMN IF NOT EXISTS final_url TEXT;
+
 CREATE INDEX IF NOT EXISTS url_checks_url_id_created_at_id_idx
     ON url_checks (url_id, created_at DESC, id DESC);
