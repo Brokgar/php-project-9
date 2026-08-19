@@ -25,7 +25,6 @@
       <tr>
         <th>ID</th>
         <th>Код ответа</th>
-        <th>Конечный URL</th>
         <th>h1</th>
         <th>title</th>
         <th>description</th>
@@ -37,7 +36,6 @@
         <tr>
           <td><?= htmlspecialchars((string) $check['id']) ?></td>
           <td><?= htmlspecialchars((string) ($check['status_code'] ?? '')) ?></td>
-          <td><a href="<?= htmlspecialchars($check['final_url']) ?>" target="_blank" rel="noopener noreferrer"><?= htmlspecialchars($check['final_url_label']) ?></a></td>
           <td><?= htmlspecialchars($check['h1_label']) ?></td>
           <td><?= htmlspecialchars($check['title_label']) ?></td>
           <td><?= htmlspecialchars($check['description_label']) ?></td>
