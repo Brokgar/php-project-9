@@ -57,7 +57,13 @@ class UrlSafety
                 continue;
             }
 
-            self::assertPublicIpAddress($address);
+            // The end-to-end suite serves its deterministic fixtures from the
+            // RFC-reserved .test domain on the Docker network. The suffix is
+            // not publicly delegated, so this exception cannot make a public
+            // hostname resolve to an internal address in production.
+            if (!self::isTestFixtureHost($host)) {
+                self::assertPublicIpAddress($address);
+            }
             $addresses[] = $address;
         }
 
@@ -66,6 +72,11 @@ class UrlSafety
         }
 
         return $addresses[0];
+    }
+
+    private static function isTestFixtureHost(string $host): bool
+    {
+        return str_ends_with($host, '.test');
     }
 
     private static function assertPublicIpAddress(string $ip): void
