@@ -2,16 +2,17 @@
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use App\PageData;
 use DI\ContainerBuilder;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use Slim\Exception\HttpNotFoundException;
 use Slim\Factory\AppFactory;
 use Slim\Views\PhpRenderer;
+use Symfony\Component\DomCrawler\Crawler;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Dotenv\Dotenv;
 use Slim\Flash\Messages;
-use GuzzleHttp\Exception\GuzzleException;
 use Valitron\Validator;
 
 $dotenv = Dotenv::createImmutable(dirname(__DIR__));
@@ -29,6 +30,9 @@ $containerBuilder->addDefinitions(
         $renderer = new PhpRenderer(__DIR__ . '/../templates');
         $renderer->setLayout('layout.phtml');
         return $renderer;
+    },
+    'httpClient' => static function (): Client {
+        return new Client(['timeout' => 10]);
     },
     'pdo' => static function (): PDO {
         $dbUrl = $_ENV['DATABASE_URL'] ?? null;
@@ -61,6 +65,7 @@ $app = AppFactory::create();
 $router = $app->getRouteCollector()->getRouteParser();
 $renderer = $container->get('renderer');
 $flash = $container->get('flash');
+$httpClient = $container->get('httpClient');
 $renderer->addAttribute('router', $router);
 $renderer->addAttribute('flash', $flash);
 
@@ -114,9 +119,14 @@ $app->post(
         $validator->rule('url', 'url')->message('Некорректный URL');
 
         if (!$validator->validate()) {
-            $errors = $validator->errors();
-            $flash->addMessageNow('danger', $errors['url'][0]);
-            return $renderer->render($response->withStatus(422), 'index.phtml', ['url' => $urlName]);
+            return $renderer->render(
+                $response->withStatus(422),
+                'index.phtml',
+                [
+                    'url' => $urlName,
+                    'errors' => $validator->errors(),
+                ]
+            );
         }
 
         $parsedUrl = parse_url($urlName);
@@ -144,22 +154,10 @@ $app->post(
         $statement = $pdo->prepare(
             'INSERT INTO urls (name, created_at)
              VALUES (:name, CURRENT_TIMESTAMP)
-             ON CONFLICT (name) DO NOTHING
              RETURNING id'
         );
         $statement->execute(['name' => $normalizedUrl]);
         $id = $statement->fetchColumn();
-
-        if ($id === false) {
-            $statement = $pdo->prepare('SELECT id FROM urls WHERE name = :name');
-            $statement->execute(['name' => $normalizedUrl]);
-            $id = $statement->fetchColumn();
-            $flash->addMessage('danger', 'Страница уже существует');
-
-            return $response
-                ->withHeader('Location', $router->urlFor('urls.show', ['id' => $id]))
-                ->withStatus(302);
-        }
 
         $flash->addMessage('success', 'Страница успешно добавлена');
 
@@ -249,6 +247,7 @@ $app->post(
         array $args
     ) use (
         $flash,
+        $httpClient,
         $router
     ): Response {
         $pdo = $request->getAttribute('pdo');
@@ -263,8 +262,8 @@ $app->post(
         }
 
         try {
-            $pageData = PageData::get($url['name']);
-        } catch (GuzzleException | InvalidArgumentException $exception) {
+            $siteResponse = $httpClient->get($url['name']);
+        } catch (GuzzleException $exception) {
             error_log(sprintf('Unable to check URL "%s": %s', $url['name'], $exception->getMessage()));
             $flash->addMessage('danger', 'Произошла ошибка при проверке, не удалось подключиться');
             return $response
@@ -272,33 +271,32 @@ $app->post(
                 ->withStatus(302);
         }
 
+        $crawler = new Crawler((string) $siteResponse->getBody());
+        $h1Node = $crawler->filter('h1')->first();
+        $titleNode = $crawler->filter('title')->first();
+        $descriptionNode = $crawler->filter('meta[name="description"]')->first();
+
+        $h1 = $h1Node->count() > 0 ? mb_substr($h1Node->text(), 0, 255) : null;
+        $title = $titleNode->count() > 0 ? mb_substr($titleNode->text(), 0, 255) : null;
+        $description = $descriptionNode->count() > 0
+            ? trim((string) $descriptionNode->attr('content'))
+            : null;
+
         $statement = $pdo->prepare(
-            'INSERT INTO url_checks (url_id, status_code, h1, title, description, final_url, created_at)
-             VALUES (:url_id, :status_code, :h1, :title, :description, :final_url, CURRENT_TIMESTAMP)'
+            'INSERT INTO url_checks (url_id, status_code, h1, title, description, created_at)
+             VALUES (:url_id, :status_code, :h1, :title, :description, CURRENT_TIMESTAMP)'
         );
         $statement->execute(
             [
             'url_id' => $urlId,
-            'status_code' => $pageData['statusCode'],
-            'h1' => $pageData['h1'],
-            'title' => $pageData['title'],
-            'description' => $pageData['description'],
-            'final_url' => $pageData['finalUrl'],
+            'status_code' => $siteResponse->getStatusCode(),
+            'h1' => $h1,
+            'title' => $title,
+            'description' => $description,
             ]
         );
 
-        $metadataIsMissing = $pageData['h1'] === null && $pageData['description'] === null;
-        if ($metadataIsMissing) {
-            $flash->addMessage(
-                'warning',
-                sprintf(
-                    'Проверка завершилась на странице %s. На ней не найдены h1 и meta description.',
-                    $pageData['finalUrl']
-                )
-            );
-        } else {
-            $flash->addMessage('success', 'Страница успешно проверена');
-        }
+        $flash->addMessage('success', 'Страница успешно проверена');
         return $response
             ->withHeader('Location', $router->urlFor('urls.show', ['id' => $urlId]))
             ->withStatus(302);
@@ -318,13 +316,13 @@ $app->get(
         }
 
         $statement = $pdo->prepare(
-            'SELECT id, status_code, h1, title, description, final_url, created_at
+            'SELECT id, status_code, h1, title, description, created_at
              FROM url_checks
              WHERE url_id = :url_id
              ORDER BY created_at DESC, id DESC'
         );
         $statement->execute(['url_id' => $url['id']]);
-        $checks = PageData::prepareChecksForView($statement->fetchAll(PDO::FETCH_ASSOC), $url['name']);
+        $checks = $statement->fetchAll(PDO::FETCH_ASSOC);
 
         return $renderer->render(
             $response,

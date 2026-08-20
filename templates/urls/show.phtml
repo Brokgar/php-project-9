@@ -20,7 +20,7 @@
   <form action="<?= htmlspecialchars($router->urlFor('urls.checks.create', ['url_id' => $url['id']])) ?>" method="post" class="mb-3">
     <input type="submit" class="btn btn-primary" value="Запустить проверку">
   </form>
-  <table class="table table-bordered table-hover text-nowrap" data-test="checks">
+  <table class="table table-bordered table-hover" data-test="checks">
     <thead>
       <tr>
         <th>ID</th>
@@ -33,12 +33,16 @@
     </thead>
     <tbody>
       <?php foreach ($checks as $check): ?>
+        <?php $description = $check['description'] ?? ''; ?>
+        <?php $description = mb_strlen($description) > 120
+            ? mb_substr($description, 0, 120) . '...'
+            : $description; ?>
         <tr>
           <td><?= htmlspecialchars((string) $check['id']) ?></td>
           <td><?= htmlspecialchars((string) ($check['status_code'] ?? '')) ?></td>
-          <td><?= htmlspecialchars($check['h1_label']) ?></td>
-          <td><?= htmlspecialchars($check['title_label']) ?></td>
-          <td><?= htmlspecialchars($check['description_label']) ?></td>
+          <td><?= htmlspecialchars($check['h1'] ?? '') ?></td>
+          <td><?= htmlspecialchars($check['title'] ?? '') ?></td>
+          <td class="text-break"><?= htmlspecialchars($description) ?></td>
           <td><?= htmlspecialchars($check['created_at']) ?></td>
         </tr>
       <?php endforeach; ?>

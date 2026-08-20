@@ -6,6 +6,11 @@
       <form action="<?= htmlspecialchars($router->urlFor('urls.create')) ?>" method="post" class="rss-form d-flex justify-content-center text-body">
         <div class="w-100">
           <input type="text" name="url" value="<?= htmlspecialchars($url ?? '') ?>" placeholder="https://www.example.com" class="form-control form-control-lg" required>
+          <?php foreach ($errors ?? [] as $fieldErrors): ?>
+            <?php foreach ($fieldErrors as $error): ?>
+              <div class="invalid-feedback d-block"><?= htmlspecialchars($error) ?></div>
+            <?php endforeach; ?>
+          <?php endforeach; ?>
         </div>
         <input type="submit" class="btn btn-primary btn-lg ms-3 px-5 text-uppercase" value="Проверить">
       </form>
