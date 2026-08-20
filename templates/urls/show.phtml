@@ -33,6 +33,10 @@
     </thead>
     <tbody>
       <?php foreach ($checks as $check): ?>
+        <?php $h1 = $check['h1'] ?? ''; ?>
+        <?php $h1 = mb_strlen($h1) > 200 ? mb_substr($h1, 0, 200) . '...' : $h1; ?>
+        <?php $title = $check['title'] ?? ''; ?>
+        <?php $title = mb_strlen($title) > 200 ? mb_substr($title, 0, 200) . '...' : $title; ?>
         <?php $description = $check['description'] ?? ''; ?>
         <?php $description = mb_strlen($description) > 120
             ? mb_substr($description, 0, 120) . '...'
@@ -40,8 +44,8 @@
         <tr>
           <td><?= htmlspecialchars((string) $check['id']) ?></td>
           <td><?= htmlspecialchars((string) ($check['status_code'] ?? '')) ?></td>
-          <td><?= htmlspecialchars($check['h1'] ?? '') ?></td>
-          <td><?= htmlspecialchars($check['title'] ?? '') ?></td>
+          <td class="text-break"><?= htmlspecialchars($h1) ?></td>
+          <td class="text-break"><?= htmlspecialchars($title) ?></td>
           <td class="text-break"><?= htmlspecialchars($description) ?></td>
           <td><?= htmlspecialchars($check['created_at']) ?></td>
         </tr>
